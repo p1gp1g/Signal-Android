@@ -102,15 +102,15 @@ object FcmFetchManager {
       cancelMayHaveMessagesNotification(context)
     } else {
       SignalLocalMetrics.PushWebsocketFetch.onTimedOut(metricId)
-      if (hasHighPriorityContext) {
-        postMayHaveMessagesNotification(context)
-      }
     }
 
     synchronized(this) {
 
       if (last <= now) {
         Log.i(TAG, "No more active. Stopping.")
+        if (!success && hasHighPriorityContext) {
+          postMayHaveMessagesNotification(context)
+        }
         context.stopService(Intent(context, FcmFetchBackgroundService::class.java))
         FcmFetchForegroundService.stopServiceIfNecessary(context)
         highPriority = false
