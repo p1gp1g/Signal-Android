@@ -122,7 +122,7 @@ public final class SignalWebSocket {
     }
   }
 
-  private void disconnectUnidentified() {
+  public void disconnectUnidentified() {
     if (unidentifiedWebSocket != null) {
       unidentifiedWebSocketStateDisposable.dispose();
 
@@ -183,7 +183,9 @@ public final class SignalWebSocket {
     if (canConnect) {
       try {
         getWebSocket().sendKeepAlive();
-        getUnidentifiedWebSocket().sendKeepAlive();
+        if (unidentifiedWebSocket != null && !unidentifiedWebSocket.isDead()) {
+          getUnidentifiedWebSocket().sendKeepAlive();
+        }
       } catch (WebSocketUnavailableException e) {
         throw new AssertionError(e);
       }

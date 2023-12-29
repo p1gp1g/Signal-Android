@@ -175,6 +175,7 @@ public class WebSocketConnection extends WebSocketListener {
       }
 
       webSocketState.onNext(WebSocketConnectionState.CONNECTING);
+      healthMonitor.needsKeepAlive(true, credentialsProvider.isPresent());
 
       this.client = okHttpClient.newWebSocket(requestBuilder.build(), this);
     }
@@ -192,6 +193,7 @@ public class WebSocketConnection extends WebSocketListener {
       client.close(1000, "OK");
       client = null;
       webSocketState.onNext(WebSocketConnectionState.DISCONNECTING);
+      healthMonitor.needsKeepAlive(false, credentialsProvider.isPresent());
     }
 
     notifyAll();

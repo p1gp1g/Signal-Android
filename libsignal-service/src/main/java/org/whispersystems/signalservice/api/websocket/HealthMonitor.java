@@ -7,4 +7,6 @@ public interface HealthMonitor {
   void onKeepAliveResponse(long sentTimestamp, boolean isIdentifiedWebSocket);
 
   void onMessageError(int status, boolean isIdentifiedWebSocket);
+
+  void needsKeepAlive(boolean need, boolean isIdentifiedWebSocket);
 }

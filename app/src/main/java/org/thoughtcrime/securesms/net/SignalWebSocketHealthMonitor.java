@@ -134,6 +134,13 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
     });
   }
 
+  @Override
+  public void needsKeepAlive(boolean need, boolean isIdentifiedWebSocket) {
+    if (!isIdentifiedWebSocket) {
+      unidentified.needsKeepAlive = need;
+    }
+  }
+
   private boolean isKeepAliveNecessary() {
     return identified.needsKeepAlive || unidentified.needsKeepAlive;
   }
@@ -172,7 +179,8 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
           sleepUntil(responseRequiredTime);
 
           if (shouldKeepRunning && isKeepAliveNecessary()) {
-            if (identified.lastKeepAliveReceived < keepAliveSendTime || unidentified.lastKeepAliveReceived < keepAliveSendTime) {
+            if ((identified.needsKeepAlive && identified.lastKeepAliveReceived < keepAliveSendTime) ||
+                (unidentified.needsKeepAlive && unidentified.lastKeepAliveReceived < keepAliveSendTime)) {
               Log.w(TAG, "Missed keep alives, identified last: " + identified.lastKeepAliveReceived +
                          " unidentified last: " + unidentified.lastKeepAliveReceived +
                          " needed by: " + responseRequiredTime);
