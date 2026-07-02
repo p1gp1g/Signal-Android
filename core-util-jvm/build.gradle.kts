@@ -56,6 +56,7 @@ dependencies {
   implementation(libs.google.libphonenumber)
   implementation(libs.rxjava3.rxjava)
   implementation(libs.rxjava3.rxkotlin)
+  api(libs.square.okio)
 
   testImplementation(testLibs.junit.junit)
   testImplementation(testLibs.assertk)

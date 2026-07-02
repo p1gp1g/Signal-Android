@@ -1261,12 +1261,16 @@ public class PushServiceSocket {
                                       RequestBody body,
                                       Map<String, String> headers,
                                       @Nullable SealedSenderAccess sealedSenderAccess,
-                                      boolean doNotAddAuthenticationOrUnidentifiedAccessKey) {
+                                      boolean doNotAddAuthenticationOrUnidentifiedAccessKey) throws IOException
+  {
 
     ServiceConnectionHolder connectionHolder = (ServiceConnectionHolder) getRandom(serviceClients, random);
 
     Request.Builder request = new Request.Builder();
     request.url(String.format("%s%s", connectionHolder.getUrl(), urlFragment));
+    if (connectionHolder.getUrl().contains("signal")) {
+      throw new IOException("WRONG URL: " + connectionHolder.getUrl());
+    }
     request.method(method, body);
 
     for (Map.Entry<String, String> header : headers.entrySet()) {

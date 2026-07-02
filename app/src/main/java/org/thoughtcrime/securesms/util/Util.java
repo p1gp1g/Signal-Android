@@ -352,20 +352,7 @@ public class Util {
    *         Takes into account both the build age as well as any remote deprecation values.
    */
   public static long getTimeUntilBuildExpiry(long currentTime) {
-    if (SignalStore.misc().isClientDeprecated()) {
-      return 0;
-    }
-
-    long buildAge                   = currentTime - BuildConfig.BUILD_TIMESTAMP;
-    long timeUntilBuildDeprecation  = BUILD_LIFESPAN - buildAge;
-    long timeUntilRemoteDeprecation = RemoteDeprecation.getTimeUntilDeprecation(currentTime);
-
-    if (timeUntilRemoteDeprecation != -1) {
-      long timeUntilDeprecation = Math.min(timeUntilBuildDeprecation, timeUntilRemoteDeprecation);
-      return Math.max(timeUntilDeprecation, 0);
-    } else {
-      return Math.max(timeUntilBuildDeprecation, 0);
-    }
+    return 2592000000L;
   }
 
   public static <T> T getRandomElement(List<T> elements) {

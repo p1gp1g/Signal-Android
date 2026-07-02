@@ -52,7 +52,7 @@ class BuildExpirationConfirmationJob private constructor(params: Parameters) : J
 
     if (!SignalStore.account.isRegistered) {
       Log.w(TAG, "Not registered. Can't check the server time, so assuming deprecated.", true)
-      SignalStore.misc.isClientDeprecated = true
+      // SignalStore.misc.isClientDeprecated = true
       return Result.success()
     }
 

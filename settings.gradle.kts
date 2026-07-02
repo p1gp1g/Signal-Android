@@ -9,9 +9,14 @@ pluginManagement {
 dependencyResolutionManagement {
   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
   repositories {
-    google()
-    mavenCentral()
     mavenLocal()
+    maven {
+      url = uri("https://dl.cloudsmith.io/public/mollyim/libsignal/maven/")
+      content {
+        includeModule("im.molly", "libsignal-client")
+        includeModule("im.molly", "libsignal-android")
+      }
+    }
     maven {
       url = uri("https://raw.githubusercontent.com/signalapp/maven/master/sqlcipher/release/")
       content {
@@ -27,6 +32,8 @@ dependencyResolutionManagement {
     maven {
       url = uri("https://dl.cloudsmith.io/qxAgwaeEE1vN8aLU/mobilecoin/mobilecoin/maven/")
     }
+    mavenCentral()
+    google()
   }
   versionCatalogs {
     // libs.versions.toml is automatically registered.
@@ -48,8 +55,8 @@ if (libsignalClientPath is String) {
   includeBuild(rootDir.resolve(libsignalClientPath + "/java")) {
     name = "libsignal-client"
     dependencySubstitution {
-      substitute(module("org.signal:libsignal-client")).using(project(":client"))
-      substitute(module("org.signal:libsignal-android")).using(project(":android"))
+      substitute(module("im.molly:libsignal-client")).using(project(":client"))
+      substitute(module("im.molly:libsignal-android")).using(project(":android"))
     }
   }
 }
