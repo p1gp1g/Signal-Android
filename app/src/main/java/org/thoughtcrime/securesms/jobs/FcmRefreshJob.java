@@ -82,6 +82,23 @@ public class FcmRefreshJob extends BaseJob {
   @Override
   public void onRun() throws Exception {
     if (!SignalStore.account().isFcmEnabled()) return;
+    if (SignalStore.unifiedpush().getRegistered()) {
+      if (SignalStore.account().getFcmToken() != null) {
+        Log.i(TAG, "Unregistering FCM");
+        NetworkResultUtil.toBasicLegacy(SignalNetwork.account().clearFcmToken());
+        SignalStore.account().setFcmToken(null);
+      }
+      return;
+    }
+
+    long lastSetTime = SignalStore.account().getFcmTokenLastSetTime();
+    long nextSetTime = lastSetTime + TimeUnit.HOURS.toMillis(6);
+    long now         = System.currentTimeMillis();
+
+    if (SignalStore.account().getFcmToken() != null && nextSetTime > now && lastSetTime < now) {
+      Log.d(TAG, "FCM already registered");
+      return;
+    }
 
     Log.i(TAG, "Reregistering FCM...");
 

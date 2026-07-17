@@ -138,7 +138,7 @@ class IncomingMessageObserver(
 
     MessageRetrievalThread().start()
 
-    if (!SignalStore.account.fcmEnabled || SignalStore.internal.isWebsocketModeForced) {
+    if (!SignalStore.hasPush || SignalStore.internal.isWebsocketModeForced) {
       try {
         ForegroundServiceUtil.start(context, Intent(context, ForegroundService::class.java))
       } catch (e: UnableToStartException) {
@@ -232,6 +232,8 @@ class IncomingMessageObserver(
 
     val registered = SignalStore.account.isRegistered
     val fcmEnabled = SignalStore.account.fcmEnabled
+    val unifiedPushEnabled = SignalStore.unifiedpush.registered
+    val hasPush = SignalStore.hasPush
     val hasNetwork = NetworkConstraint.isMet(context)
     val hasProxy = SignalStore.proxy.isProxyEnabled
     val forceWebsocket = SignalStore.internal.isWebsocketModeForced
@@ -239,12 +241,12 @@ class IncomingMessageObserver(
 
     val lastInteractionString = if (appVisibleSnapshot) "N/A" else timeIdle.toString() + " ms (" + (if (timeIdle < maxBackgroundTime) "within limit" else "over limit") + ")"
     val conclusion = registered &&
-      (appVisibleSnapshot || timeIdle < maxBackgroundTime || !fcmEnabled) &&
+      (appVisibleSnapshot || timeIdle < maxBackgroundTime || !hasPush) &&
       hasNetwork
 
     val needsConnectionString = if (conclusion) "Needs Connection" else "Does Not Need Connection"
 
-    Log.d(TAG, "[$needsConnectionString] Network: $hasNetwork, Foreground: $appVisibleSnapshot, Time Since Last Interaction: $lastInteractionString, FCM: $fcmEnabled, WS Open or Keep-alives: $websocketAlreadyOpen, Registered: $registered, Proxy: $hasProxy, Force websocket: $forceWebsocket")
+    Log.d(TAG, "[$needsConnectionString] Network: $hasNetwork, Foreground: $appVisibleSnapshot, Time Since Last Interaction: $lastInteractionString, HasPush: $hasPush (FCM: $fcmEnabled, UP: $unifiedPushEnabled) WS Open or Keep-alives: $websocketAlreadyOpen, Registered: $registered, Proxy: $hasProxy, Force websocket: $forceWebsocket")
     return conclusion
   }
 
@@ -376,7 +378,7 @@ class IncomingMessageObserver(
       Log.i(TAG, "Initializing! (${this.hashCode()})")
       uncaughtExceptionHandler = this
 
-      sleepTimer = if (!SignalStore.account.fcmEnabled || SignalStore.internal.isWebsocketModeForced) AlarmSleepTimer(context) else UptimeSleepTimer()
+      sleepTimer = if (!SignalStore.hasPush || SignalStore.internal.isWebsocketModeForced) AlarmSleepTimer(context) else UptimeSleepTimer()
 
       canProcessMessages = !(RemoteConfig.restoreAfterRegistration && SignalStore.registration.restoreDecisionState.isDecisionPending)
     }

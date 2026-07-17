@@ -23,6 +23,7 @@ import org.thoughtcrime.securesms.net.StandardUserAgentInterceptor;
 import org.thoughtcrime.securesms.notifications.SlowNotificationHeuristics;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.service.webrtc.AndroidTelecomUtil;
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor;
 import org.thoughtcrime.securesms.util.AppSignatureUtil;
 import org.thoughtcrime.securesms.util.ByteUnit;
 import org.thoughtcrime.securesms.util.ContextUtil;
@@ -79,6 +80,10 @@ public class LogSectionSystemInfo implements LogSection {
     builder.append("Network Status    : ").append(NetworkUtil.getNetworkStatus(context)).append("\n");
     builder.append("Play Services     : ").append(getPlayServicesString(context)).append("\n");
     builder.append("FCM               : ").append(SignalStore.account().isFcmEnabled()).append("\n");
+    builder.append("UP Distribs avail : ").append(UnifiedPushDistributor.nDistribInstalled()).append("\n");
+    builder.append("UP Available      : ").append(SignalStore.unifiedpush().available()).append("\n");
+    builder.append("UP Registered     : ").append(SignalStore.unifiedpush().getRegistrationStatus()).append("\n");
+    builder.append("UP selected       : ").append(UnifiedPushDistributor.selected()).append("\n");
     builder.append("Locale            : ").append(Locale.getDefault()).append("\n");
     builder.append("Linked Devices    : ").append(SignalStore.account().isMultiDevice()).append("\n");
     builder.append("First Version     : ").append(TextSecurePreferences.getFirstInstallVersion(context)).append("\n");

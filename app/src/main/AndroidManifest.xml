@@ -1146,6 +1146,9 @@
               android:exported="false"
               android:theme="@style/Signal.DayNight.NoActionBar" />
 
+    <activity android:name="org.thoughtcrime.securesms.unifiedpush.UnifiedPushLinkActivity"
+              android:exported="false" />
+
     <service
         android:enabled="true"
         android:exported="false"
@@ -1426,6 +1429,13 @@
         android:name="org.thoughtcrime.securesms.service.webrtc.ActiveCallManager$ActiveCallForegroundService"
         android:exported="false"
         android:foregroundServiceType="dataSync|microphone|camera" />
+
+    <service android:name="org.thoughtcrime.securesms.unifiedpush.UnifiedPushService"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="org.unifiedpush.android.connector.PUSH_EVENT"/>
+        </intent-filter>
+    </service>
 
     <receiver android:name="org.thoughtcrime.securesms.service.webrtc.ActiveCallManager$ActiveCallServiceReceiver" android:exported="false">
         <intent-filter>

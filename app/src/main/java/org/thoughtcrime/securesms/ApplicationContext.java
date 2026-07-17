@@ -78,6 +78,7 @@ import org.thoughtcrime.securesms.jobs.RetrieveProfileJob;
 import org.thoughtcrime.securesms.jobs.RetrieveRemoteAnnouncementsJob;
 import org.thoughtcrime.securesms.jobs.RetryPendingSendsJob;
 import org.thoughtcrime.securesms.jobs.StoryOnboardingDownloadJob;
+import org.thoughtcrime.securesms.jobs.UnifiedPushRefreshJob;
 import org.thoughtcrime.securesms.keyvalue.KeepMessagesDuration;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.logging.CustomSignalProtocolLogger;
@@ -192,7 +193,7 @@ public class ApplicationContext extends Application implements AppForegroundObse
               .addNonBlocking(this::initializeRevealableMessageManager)
               .addNonBlocking(this::initializePendingRetryReceiptManager)
               .addNonBlocking(this::initializeScheduledMessageManager)
-              .addNonBlocking(this::initializeFcmCheck)
+              .addNonBlocking(this::initializePush)
               .addNonBlocking(PreKeysSyncJob::enqueueIfNeeded)
               .addNonBlocking(this::initializePeriodicTasks)
               .addNonBlocking(this::initializeCircumvention)
@@ -413,15 +414,10 @@ public class ApplicationContext extends Application implements AppForegroundObse
     }
   }
 
-  private void initializeFcmCheck() {
+  public void initializePush() {
     if (SignalStore.account().isRegistered()) {
-      long lastSetTime = SignalStore.account().getFcmTokenLastSetTime();
-      long nextSetTime = lastSetTime + TimeUnit.HOURS.toMillis(6);
-      long now         = System.currentTimeMillis();
-
-      if (SignalStore.account().getFcmToken() == null || nextSetTime <= now || lastSetTime > now) {
-        AppDependencies.getJobManager().add(new FcmRefreshJob());
-      }
+      AppDependencies.getJobManager().add(new UnifiedPushRefreshJob());
+      AppDependencies.getJobManager().add(new FcmRefreshJob());
     }
   }
 

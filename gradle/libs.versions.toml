@@ -141,6 +141,9 @@ com-google-devtools-ksp-gradle-plugin = "com.google.devtools.ksp:com.google.devt
 # Firebase
 firebase-messaging = "com.google.firebase:firebase-messaging:24.1.0"
 
+# UnifiedPush
+unifiedpush-connector = "org.unifiedpush.android:connector:3.3.4-rc1"
+
 # 1st Party
 libsignal-client = { module = "im.molly:libsignal-client", version.ref = "libsignal-client" }
 libsignal-android = { module = "im.molly:libsignal-android", version.ref = "libsignal-client" }

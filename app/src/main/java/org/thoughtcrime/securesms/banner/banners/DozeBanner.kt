@@ -27,7 +27,7 @@ import org.thoughtcrime.securesms.util.TextSecurePreferences
 class DozeBanner(private val context: Context, private val onDismissListener: () -> Unit) : Banner<Unit>() {
 
   override val enabled: Boolean
-    get() = Build.VERSION.SDK_INT >= 23 && !SignalStore.account.fcmEnabled && !TextSecurePreferences.hasPromptedOptimizeDoze(context) && !ServiceUtil.getPowerManager(context).isIgnoringBatteryOptimizations(context.packageName)
+    get() = Build.VERSION.SDK_INT >= 23 && !SignalStore.hasPush && !TextSecurePreferences.hasPromptedOptimizeDoze(context) && !ServiceUtil.getPowerManager(context).isIgnoringBatteryOptimizations(context.packageName)
 
   override val dataFlow: Flow<Unit>
     get() = flowOf(Unit)

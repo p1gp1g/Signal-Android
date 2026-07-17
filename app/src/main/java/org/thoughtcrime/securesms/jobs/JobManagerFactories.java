@@ -286,6 +286,7 @@ public final class JobManagerFactories {
       put(ThreadUpdateJob.KEY,                         new ThreadUpdateJob.Factory());
       put(TrimThreadJob.KEY,                           new TrimThreadJob.Factory());
       put(TypingSendJob.KEY,                           new TypingSendJob.Factory());
+      put(UnifiedPushRefreshJob.KEY,                   new UnifiedPushRefreshJob.Factory());
       put(UploadAttachmentToArchiveJob.KEY,            new UploadAttachmentToArchiveJob.Factory());
 
       // Migrations

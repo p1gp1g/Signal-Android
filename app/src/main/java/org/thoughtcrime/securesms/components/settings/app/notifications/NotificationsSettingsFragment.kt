@@ -14,11 +14,16 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.launch
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import org.signal.core.util.getParcelableExtraCompat
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.R
@@ -32,9 +37,13 @@ import org.thoughtcrime.securesms.components.settings.RadioListPreference
 import org.thoughtcrime.securesms.components.settings.RadioListPreferenceViewHolder
 import org.thoughtcrime.securesms.components.settings.configure
 import org.thoughtcrime.securesms.components.settings.models.Banner
+import org.thoughtcrime.securesms.conversation.v2.registerForLifecycle
+import org.thoughtcrime.securesms.events.PushServiceEvent
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.notifications.NotificationChannels
 import org.thoughtcrime.securesms.notifications.TurnOnNotificationsBottomSheet
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushLinkActivity
 import org.thoughtcrime.securesms.util.BottomSheetUtil
 import org.thoughtcrime.securesms.util.RingtoneUtil
 import org.thoughtcrime.securesms.util.ViewUtil
@@ -65,8 +74,23 @@ class NotificationsSettingsFragment : DSLSettingsFragment(R.string.preferences__
 
   private lateinit var viewModel: NotificationsSettingsViewModel
 
+  private val linkUnifiedPushDistributorLauncher: ActivityResultLauncher<Unit> =
+    registerForActivityResult(UnifiedPushLinkActivity.Contract()) { success ->
+      if (success == true) {
+        UnifiedPushDistributor.register()
+        viewModel.setUnifiedPush(true)
+      }
+    }
+
   override fun onResume() {
     super.onResume()
+    // It calls viewModel.refresh()
+    viewModel.setUnifiedPushAvailable(UnifiedPushDistributor.isAvailable())
+  }
+
+  @Subscribe(threadMode = ThreadMode.MAIN)
+  fun onPushServiceEvent(event: PushServiceEvent) {
+    Log.d(TAG, "Refreshing from push event")
     viewModel.refresh()
   }
 
@@ -96,6 +120,8 @@ class NotificationsSettingsFragment : DSLSettingsFragment(R.string.preferences__
     viewModel.state.observe(viewLifecycleOwner) {
       adapter.submitList(getConfiguration(it).toMappingModelList())
     }
+
+    EventBus.getDefault().registerForLifecycle(subscriber = this, lifecycleOwner = viewLifecycleOwner)
   }
 
   private fun getConfiguration(state: NotificationsSettingsState): DSLConfiguration {
@@ -294,6 +320,24 @@ class NotificationsSettingsFragment : DSLSettingsFragment(R.string.preferences__
           viewModel.setNotifyWhenContactJoinsSignal(!state.notifyWhenContactJoinsSignal)
         }
       )
+
+      if (state.unifiedPushState.enabled) {
+        dividerPref()
+
+        sectionHeaderPref(R.string.unifiedpush)
+
+        switchPref(
+          title = DSLSettingsText.from(R.string.NotificationsSettingsFragment__use_unifiedpush),
+          isChecked = state.unifiedPushState.registered,
+          onClick = {
+            if (state.unifiedPushState.registered) {
+              viewModel.setUnifiedPush(false)
+            } else {
+              linkUnifiedPushDistributorLauncher.launch()
+            }
+          }
+        )
+      }
     }
   }
 
