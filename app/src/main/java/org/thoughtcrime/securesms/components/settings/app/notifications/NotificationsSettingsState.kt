@@ -5,6 +5,7 @@ import android.net.Uri
 data class NotificationsSettingsState(
   val messageNotificationsState: MessageNotificationsState,
   val callNotificationsState: CallNotificationsState,
+  val unifiedPushState: UnifiedPushState,
   val notifyWhenContactJoinsSignal: Boolean
 )
 
@@ -27,4 +28,9 @@ data class CallNotificationsState(
   val canEnableNotifications: Boolean,
   val ringtone: Uri,
   val vibrateEnabled: Boolean
+)
+
+data class UnifiedPushState(
+  val enabled: Boolean,
+  val registered: Boolean
 )

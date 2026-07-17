@@ -25,6 +25,7 @@ import org.thoughtcrime.securesms.net.StandardUserAgentInterceptor
 import org.thoughtcrime.securesms.notifications.SlowNotificationHeuristics.isHavingDelayedNotifications
 import org.thoughtcrime.securesms.recipients.Recipient.Companion.self
 import org.thoughtcrime.securesms.service.webrtc.AndroidTelecomUtil.telecomSupported
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor
 import org.thoughtcrime.securesms.util.AppSignatureUtil
 import org.thoughtcrime.securesms.util.DeviceProperties
 import org.thoughtcrime.securesms.util.NetworkUtil
@@ -67,6 +68,10 @@ class LogSectionSystemInfo : LogSection {
       Network Status    : ${NetworkUtil.getNetworkStatus(context)}
       Play Services     : ${getPlayServicesString(context)}
       FCM               : ${SignalStore.account.fcmEnabled}
+      UP Distribs avail : ${UnifiedPushDistributor.nDistribInstalled()}
+      UP Available      : ${SignalStore.unifiedpush.available}
+      UP Reg Status     : ${SignalStore.unifiedpush.registrationStatus}
+      UP Service use    : ${UnifiedPushDistributor.selected}
       Locale            : ${Locale.getDefault()}
       Linked Devices    : ${SignalStore.account.isMultiDevice}
       First Version     : ${TextSecurePreferences.getFirstInstallVersion(context)}

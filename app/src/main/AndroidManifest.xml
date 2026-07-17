@@ -959,6 +959,10 @@
             android:exported="false"
             android:theme="@style/Signal.DayNight.NoActionBar" />
 
+        <activity
+            android:name="org.thoughtcrime.securesms.unifiedpush.UnifiedPushLinkActivity"
+            android:exported="false" />
+
         <!-- ======================================= -->
         <!-- Activity Aliases                        -->
         <!-- ======================================= -->
@@ -1411,6 +1415,14 @@
         <service
             android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
             tools:node="remove" />
+
+        <service
+            android:name="org.thoughtcrime.securesms.unifiedpush.UnifiedPushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT"/>
+            </intent-filter>
+        </service>
 
         <!-- ======================================= -->
         <!-- Receivers                               -->

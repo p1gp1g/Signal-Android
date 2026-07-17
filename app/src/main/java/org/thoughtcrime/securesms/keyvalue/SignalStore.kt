@@ -39,6 +39,7 @@ class SignalStore(context: Application, private val store: KeyValueStore) {
   val backupValues = BackupValues(store)
   val callQualityValues = CallQualityValues(store)
   val labsValues = LabsValues(store)
+  val unifiedPushValues = UnifiedPushValues(store)
 
   val plainTextValues = PlainTextSharedPrefsDataStore(context)
 
@@ -292,6 +293,16 @@ class SignalStore(context: Application, private val store: KeyValueStore) {
 
     val groupsV2AciAuthorizationCache: GroupsV2AuthorizationSignalStoreCache
       get() = GroupsV2AuthorizationSignalStoreCache.createAciCache(instance!!.store)
+
+    @JvmStatic
+    @get:JvmName("unifiedpush")
+    val unifiedpush: UnifiedPushValues
+      get() = instance!!.unifiedPushValues
+
+    @JvmStatic
+    @get:JvmName("hasPush")
+    val hasPush: Boolean
+      get() = instance!!.unifiedPushValues.registered || instance!!.accountValues.fcmEnabled
 
     val plaintext: PlainTextSharedPrefsDataStore
       get() = instance!!.plainTextValues

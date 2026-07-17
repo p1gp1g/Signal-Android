@@ -11,12 +11,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.thoughtcrime.securesms.ApplicationContext
 import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.notifications.DeviceSpecificNotificationConfig
 import org.thoughtcrime.securesms.notifications.NotificationChannels
 import org.thoughtcrime.securesms.notifications.SlowNotificationHeuristics
 import org.thoughtcrime.securesms.preferences.widgets.NotificationPrivacyPreference
+import org.thoughtcrime.securesms.unifiedpush.RegistrationStatus
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor
 import org.thoughtcrime.securesms.util.TextSecurePreferences
 
 class NotificationsSettingsViewModel(private val sharedPreferences: SharedPreferences) : ViewModel() {
@@ -111,6 +114,22 @@ class NotificationsSettingsViewModel(private val sharedPreferences: SharedPrefer
     refresh()
   }
 
+  fun setUnifiedPushAvailable(enabled: Boolean) {
+    SignalStore.unifiedpush.available = enabled
+    refresh()
+  }
+
+  fun setUnifiedPush(enabled: Boolean) {
+    if (enabled) {
+      SignalStore.unifiedpush.registrationStatus = RegistrationStatus.PENDING
+    } else {
+      SignalStore.unifiedpush.registrationStatus = RegistrationStatus.NOT_REGISTERED
+      UnifiedPushDistributor.unregister()
+    }
+    ApplicationContext.getInstance(AppDependencies.application).initializePush()
+    refresh()
+  }
+
   /**
    * @param currentState If provided and [calculateSlowNotifications] = false, then we will copy the slow notification state from it
    * @param calculateSlowNotifications If true, calculate the true slow notification state (this is not main-thread safe). Otherwise, it will copy from
@@ -143,7 +162,11 @@ class NotificationsSettingsViewModel(private val sharedPreferences: SharedPrefer
       ringtone = SignalStore.settings.callRingtone,
       vibrateEnabled = SignalStore.settings.isCallVibrateEnabled
     ),
-    notifyWhenContactJoinsSignal = SignalStore.settings.isNotifyWhenContactJoinsSignal
+    notifyWhenContactJoinsSignal = SignalStore.settings.isNotifyWhenContactJoinsSignal,
+    unifiedPushState = UnifiedPushState(
+      enabled = SignalStore.unifiedpush.available,
+      registered = SignalStore.unifiedpush.registered
+    )
   )
 
   private fun canEnableNotifications(): Boolean {

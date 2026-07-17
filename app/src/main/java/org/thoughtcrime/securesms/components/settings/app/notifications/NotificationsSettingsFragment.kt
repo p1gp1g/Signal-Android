@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.launch
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import org.signal.core.ui.BottomSheetUtil
 import org.signal.core.ui.compose.ComposeFragment
 import org.signal.core.ui.compose.DayNightPreviews
@@ -52,7 +56,11 @@ import org.thoughtcrime.securesms.components.PromptBatterySaverDialogFragment
 import org.thoughtcrime.securesms.components.settings.app.routes.AppSettingsRoute
 import org.thoughtcrime.securesms.components.settings.app.routes.AppSettingsRouter
 import org.thoughtcrime.securesms.components.settings.models.Banner
+import org.thoughtcrime.securesms.conversation.v2.registerForLifecycle
+import org.thoughtcrime.securesms.events.PushServiceEvent
 import org.thoughtcrime.securesms.notifications.NotificationChannels
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor
+import org.thoughtcrime.securesms.unifiedpush.UnifiedPushLinkActivity
 import org.thoughtcrime.securesms.notifications.TurnOnNotificationsBottomSheet
 import org.thoughtcrime.securesms.util.RingtoneUtil
 import org.thoughtcrime.securesms.util.navigation.safeNavigate
@@ -77,6 +85,8 @@ class NotificationsSettingsFragment : ComposeFragment() {
 
     callbacks = DefaultNotificationsSettingsCallbacks(requireActivity(), viewModel, appSettingsRouter, DefaultNotificationsSettingsCallbacks.ActivityResultRegisterer.ForFragment(this))
 
+    EventBus.getDefault().registerForLifecycle(subscriber = this, lifecycleOwner = viewLifecycleOwner)
+
     viewLifecycleOwner.lifecycleScope.launch {
       repeatOnLifecycle(Lifecycle.State.RESUMED) {
         appSettingsRouter.currentRoute.collect {
@@ -94,6 +104,12 @@ class NotificationsSettingsFragment : ComposeFragment() {
 
   override fun onResume() {
     super.onResume()
+    // It calls viewModel.refresh()
+    viewModel.setUnifiedPushAvailable(UnifiedPushDistributor.isAvailable())
+  }
+
+  @Subscribe(threadMode = ThreadMode.MAIN)
+  fun onPushServiceEvent(event: PushServiceEvent) {
     viewModel.refresh()
   }
 
@@ -159,6 +175,15 @@ open class DefaultNotificationsSettingsCallbacks(
     contract = NotificationPrioritySelectionContract(),
     callback = {}
   )
+
+  private val linkUnifiedPushDistributorLauncher: ActivityResultLauncher<Unit> = activityResultRegisterer.registerForActivityResult(
+    UnifiedPushLinkActivity.Contract()
+  ) { success ->
+      if (success == true) {
+        UnifiedPushDistributor.register()
+        viewModel.setUnifiedPush(true)
+      }
+    }
 
   override fun onTurnOnNotificationsActionClick() {
     TurnOnNotificationsBottomSheet.turnOnSystemNotificationsFragment(activity).show(activity.supportFragmentManager, BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG)
@@ -263,6 +288,14 @@ open class DefaultNotificationsSettingsCallbacks(
   override fun setNotifyWhenContactJoinsSignal(enabled: Boolean) {
     viewModel.setNotifyWhenContactJoinsSignal(enabled)
   }
+
+  override fun setUnifiedPush(enabled: Boolean) {
+    if (enabled) {
+      linkUnifiedPushDistributorLauncher.launch()
+    } else {
+      viewModel.setUnifiedPush(false)
+    }
+  }
 }
 
 interface NotificationsSettingsCallbacks {
@@ -286,6 +319,7 @@ interface NotificationsSettingsCallbacks {
   fun setCallVibrateEnabled(enabled: Boolean) = Unit
   fun onNavigationProfilesClick() = Unit
   fun setNotifyWhenContactJoinsSignal(enabled: Boolean) = Unit
+  fun setUnifiedPush(enabled: Boolean) = Unit
 
   object Empty : NotificationsSettingsCallbacks
 }
@@ -527,6 +561,24 @@ fun NotificationsSettingsScreen(
           onCheckChanged = callbacks::setNotifyWhenContactJoinsSignal
         )
       }
+
+      if (state.unifiedPushState.enabled) {
+        item {
+          Dividers.Default()
+        }
+
+        item {
+          Texts.SectionHeader(stringResource(R.string.unifiedpush))
+        }
+
+        item {
+          Rows.ToggleRow(
+            text = stringResource(R.string.NotificationsSettingsFragment__use_unifiedpush),
+            checked = state.unifiedPushState.registered,
+            onCheckChanged = callbacks::setUnifiedPush
+          )
+        }
+      }
     }
   }
 }
@@ -602,7 +654,11 @@ private fun rememberTestState(): NotificationsSettingsState = remember {
       ringtone = Uri.EMPTY,
       vibrateEnabled = true
     ),
-    notifyWhenContactJoinsSignal = true
+    notifyWhenContactJoinsSignal = true,
+    unifiedPushState = UnifiedPushState(
+      enabled = true,
+      registered = false
+    )
   )
 }
 

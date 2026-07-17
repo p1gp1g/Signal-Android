@@ -155,7 +155,7 @@ class IncomingMessageObserver(
     MessageRetrievalThread().start()
 
     val registered = SignalStore.account.isRegistered && !TextSecurePreferences.isUnauthorizedReceived(context)
-    if (registered && (!SignalStore.account.fcmEnabled || SignalStore.settings.forceWebsocketMode.isEnabled)) {
+    if (registered && (!SignalStore.hasPush || SignalStore.settings.forceWebsocketMode.isEnabled)) {
       SignalExecutors.UNBOUNDED.execute {
         if (!SafeForegroundService.start(context, ForegroundService::class.java)) {
           Log.w(TAG, "Unable to start foreground service for websocket!")
@@ -243,6 +243,8 @@ class IncomingMessageObserver(
     val registered = SignalStore.account.isRegistered
     val unauthorizedReceived = TextSecurePreferences.isUnauthorizedReceived(context)
     val fcmEnabled = SignalStore.account.fcmEnabled
+    val unifiedPushEnabled = SignalStore.unifiedpush.registered
+    val hasPush = SignalStore.hasPush
     val hasNetwork = NetworkConstraint.isMet(context)
     val hasProxy = SignalStore.proxy.isProxyEnabled
     val forceWebsocket = SignalStore.settings.forceWebsocketMode.isEnabled
@@ -251,14 +253,14 @@ class IncomingMessageObserver(
     val lastInteractionString = if (appVisibleSnapshot) "N/A" else timeIdle.toString() + " ms (" + (if (timeIdle < maxBackgroundTime) "within limit" else "over limit") + ")"
     val conclusion = registered &&
       !unauthorizedReceived &&
-      (appVisibleSnapshot || timeIdle < maxBackgroundTime || !fcmEnabled || forceWebsocket) &&
+      (appVisibleSnapshot || timeIdle < maxBackgroundTime || !hasPush || forceWebsocket) &&
       hasNetwork
 
     val needsConnectionString = if (conclusion) "Needs Connection" else "Does Not Need Connection"
 
     Log.d(
       TAG,
-      "[$needsConnectionString] Network: $hasNetwork, Foreground: $appVisibleSnapshot, Time Since Last Interaction: $lastInteractionString, FCM: $fcmEnabled, WS Open or Keep-alives: $websocketAlreadyOpen, Registered: $registered, Unauthorized: $unauthorizedReceived, Proxy: $hasProxy, Force websocket: $forceWebsocket"
+      "[$needsConnectionString] Network: $hasNetwork, Foreground: $appVisibleSnapshot, Time Since Last Interaction: $lastInteractionString, HasPush: $hasPush (FCM: $fcmEnabled, UP: $unifiedPushEnabled), WS Open or Keep-alives: $websocketAlreadyOpen, Registered: $registered, Unauthorized: $unauthorizedReceived, Proxy: $hasProxy, Force websocket: $forceWebsocket"
     )
 
     return conclusion
@@ -433,7 +435,7 @@ class IncomingMessageObserver(
       Log.i(TAG, "Initializing! (${this.hashCode()})")
       uncaughtExceptionHandler = this
 
-      sleepTimer = if (!SignalStore.account.fcmEnabled || SignalStore.settings.forceWebsocketMode.isEnabled) AlarmSleepTimer(context) else UptimeSleepTimer()
+      sleepTimer = if (!SignalStore.hasPush || SignalStore.settings.forceWebsocketMode.isEnabled) AlarmSleepTimer(context) else UptimeSleepTimer()
 
       canProcessMessages = !SignalStore.registration.restoreDecisionState.isDecisionPending
     }
