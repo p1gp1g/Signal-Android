@@ -59,6 +59,7 @@ import org.thoughtcrime.securesms.components.settings.models.Banner
 import org.thoughtcrime.securesms.conversation.v2.registerForLifecycle
 import org.thoughtcrime.securesms.events.PushServiceEvent
 import org.thoughtcrime.securesms.notifications.NotificationChannels
+import org.thoughtcrime.securesms.unifiedpush.RegistrationStatus
 import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor
 import org.thoughtcrime.securesms.unifiedpush.UnifiedPushLinkActivity
 import org.thoughtcrime.securesms.notifications.TurnOnNotificationsBottomSheet
@@ -105,6 +106,7 @@ class NotificationsSettingsFragment : ComposeFragment() {
   override fun onResume() {
     super.onResume()
     // It calls viewModel.refresh()
+    viewModel.setUnifiedPushDistributor(UnifiedPushDistributor.distributorName())
     viewModel.setUnifiedPushAvailable(UnifiedPushDistributor.isAvailable())
   }
 
@@ -176,11 +178,21 @@ open class DefaultNotificationsSettingsCallbacks(
     callback = {}
   )
 
-  private val linkUnifiedPushDistributorLauncher: ActivityResultLauncher<Unit> = activityResultRegisterer.registerForActivityResult(
-    UnifiedPushLinkActivity.Contract()
+  private val linkUnifiedPushDefaultDistributorLauncher: ActivityResultLauncher<Unit> = activityResultRegisterer.registerForActivityResult(
+    UnifiedPushLinkActivity.Contract(default = true)
   ) { success ->
       if (success == true) {
         UnifiedPushDistributor.register()
+        viewModel.setUnifiedPush(true)
+      }
+    }
+
+  private val linkUnifiedPushDistributorLauncher: ActivityResultLauncher<Unit> = activityResultRegisterer.registerForActivityResult(
+      UnifiedPushLinkActivity.Contract(default = false)
+  ) { success ->
+      if (success == true) {
+        UnifiedPushDistributor.register()
+        viewModel.setUnifiedPushDistributor(UnifiedPushDistributor.distributorName())
         viewModel.setUnifiedPush(true)
       }
     }
@@ -291,10 +303,14 @@ open class DefaultNotificationsSettingsCallbacks(
 
   override fun setUnifiedPush(enabled: Boolean) {
     if (enabled) {
-      linkUnifiedPushDistributorLauncher.launch()
+      linkUnifiedPushDefaultDistributorLauncher.launch()
     } else {
       viewModel.setUnifiedPush(false)
     }
+  }
+
+  override fun pickUnifiedPushDistributor() {
+    linkUnifiedPushDistributorLauncher.launch()
   }
 }
 
@@ -320,6 +336,7 @@ interface NotificationsSettingsCallbacks {
   fun onNavigationProfilesClick() = Unit
   fun setNotifyWhenContactJoinsSignal(enabled: Boolean) = Unit
   fun setUnifiedPush(enabled: Boolean) = Unit
+  fun pickUnifiedPushDistributor() = Unit
 
   object Empty : NotificationsSettingsCallbacks
 }
@@ -574,8 +591,24 @@ fun NotificationsSettingsScreen(
         item {
           Rows.ToggleRow(
             text = stringResource(R.string.NotificationsSettingsFragment__use_unifiedpush),
-            checked = state.unifiedPushState.registered,
+            checked = state.unifiedPushState.registrationStatus.requested,
             onCheckChanged = callbacks::setUnifiedPush
+          )
+        }
+
+        item {
+          Rows.TextRow(
+            label = stringResource(R.string.NotificationsSettingsFragment__unifiedpush_service),
+            text = when (state.unifiedPushState.registrationStatus) {
+              RegistrationStatus.UNKNOWN,
+              RegistrationStatus.NOT_REGISTERED -> ""
+              RegistrationStatus.PENDING ->
+                stringResource(R.string.NotificationsSettingsFragment__unifiedpush_pending)
+
+              RegistrationStatus.REGISTERED ->
+                state.unifiedPushState.distributor ?: ""
+            },
+            onClick = callbacks::pickUnifiedPushDistributor
           )
         }
       }
@@ -657,7 +690,8 @@ private fun rememberTestState(): NotificationsSettingsState = remember {
     notifyWhenContactJoinsSignal = true,
     unifiedPushState = UnifiedPushState(
       enabled = true,
-      registered = false
+      registrationStatus = RegistrationStatus.NOT_REGISTERED,
+      distributor = null
     )
   )
 }

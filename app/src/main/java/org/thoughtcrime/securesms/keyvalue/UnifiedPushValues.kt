@@ -15,6 +15,7 @@ class UnifiedPushValues(store: KeyValueStore) : SignalStoreValues(store) {
 
     private const val UNIFIEDPUSH_STATUS = "up.status"
     private const val UNIFIEDPUSH_ENABLED = "up.enabled"
+    private const val UNIFIEDPUSH_DISTRIBUTOR = "up.distributorName"
     private const val UNIFIEDPUSH_ENDPOINT = "up.endpoint"
     private const val UNIFIEDPUSH_PUBLIC_KEY = "up.publicKey"
     private const val UNIFIEDPUSH_AUTH = "up.auth"
@@ -27,6 +28,9 @@ class UnifiedPushValues(store: KeyValueStore) : SignalStoreValues(store) {
 
   @get:JvmName("available")
   var available: Boolean by booleanValue(UNIFIEDPUSH_ENABLED, false)
+
+  @get:JvmName("distributorName")
+  var distributorName: String? by stringValue(UNIFIEDPUSH_DISTRIBUTOR, null)
 
   var registrationStatus: RegistrationStatus
     get() = RegistrationStatus.fromValue(getInteger(UNIFIEDPUSH_STATUS, -1)) ?: RegistrationStatus.UNKNOWN
