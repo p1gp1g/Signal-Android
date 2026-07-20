@@ -112,6 +112,11 @@ class NotificationsSettingsViewModel(private val sharedPreferences: SharedPrefer
     refresh()
   }
 
+  fun setUnifiedPushDistributor(name: String?) {
+    SignalStore.unifiedpush.distributorName = name
+    refresh()
+  }
+
   fun setUnifiedPush(enabled: Boolean) {
     if (enabled) {
       SignalStore.unifiedpush.registrationStatus = RegistrationStatus.PENDING
@@ -158,7 +163,8 @@ class NotificationsSettingsViewModel(private val sharedPreferences: SharedPrefer
     notifyWhenContactJoinsSignal = SignalStore.settings.isNotifyWhenContactJoinsSignal,
     unifiedPushState = UnifiedPushState(
       enabled = SignalStore.unifiedpush.available,
-      registered = SignalStore.unifiedpush.registered
+      registrationStatus = SignalStore.unifiedpush.registrationStatus,
+      distributor = SignalStore.unifiedpush.distributorName
     )
   )
 

@@ -19,7 +19,12 @@ class UnifiedPushLinkActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    if (!helper.startLinkActivityForResult()) {
+    val res = if (intent.getBooleanExtra(KEY_DEFAULT, true)) {
+      helper.startLinkActivityForResult()
+    } else {
+      helper.startPickLinkActivityForResult()
+    }
+    if (!res) {
       Log.d(TAG, "No distributor with link activity found.")
       setResult(RESULT_OK)
       finish()
@@ -41,9 +46,10 @@ class UnifiedPushLinkActivity : AppCompatActivity() {
     finish()
   }
 
-  class Contract : ActivityResultContract<Unit, Boolean?>() {
+  class Contract(private val default: Boolean = true) : ActivityResultContract<Unit, Boolean?>() {
     override fun createIntent(context: Context, input: Unit): Intent {
       return Intent(context, UnifiedPushLinkActivity::class.java)
+        .putExtra(KEY_DEFAULT, default)
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): Boolean? {
@@ -54,6 +60,7 @@ class UnifiedPushLinkActivity : AppCompatActivity() {
   }
 
   companion object {
+    private const val KEY_DEFAULT = "default"
     private const val KEY_FOUND = "found"
     private const val TAG = "UnifiedPushLinkActivity"
   }

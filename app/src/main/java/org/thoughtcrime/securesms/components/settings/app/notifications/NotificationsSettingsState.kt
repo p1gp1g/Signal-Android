@@ -1,6 +1,7 @@
 package org.thoughtcrime.securesms.components.settings.app.notifications
 
 import android.net.Uri
+import org.thoughtcrime.securesms.unifiedpush.RegistrationStatus
 
 data class NotificationsSettingsState(
   val messageNotificationsState: MessageNotificationsState,
@@ -32,5 +33,6 @@ data class CallNotificationsState(
 
 data class UnifiedPushState(
   val enabled: Boolean,
-  val registered: Boolean
+  val registrationStatus: RegistrationStatus,
+  val distributor: String?
 )

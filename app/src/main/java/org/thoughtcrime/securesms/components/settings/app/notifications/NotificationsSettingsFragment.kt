@@ -42,6 +42,7 @@ import org.thoughtcrime.securesms.events.PushServiceEvent
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.notifications.NotificationChannels
 import org.thoughtcrime.securesms.notifications.TurnOnNotificationsBottomSheet
+import org.thoughtcrime.securesms.unifiedpush.RegistrationStatus
 import org.thoughtcrime.securesms.unifiedpush.UnifiedPushDistributor
 import org.thoughtcrime.securesms.unifiedpush.UnifiedPushLinkActivity
 import org.thoughtcrime.securesms.util.BottomSheetUtil
@@ -74,10 +75,20 @@ class NotificationsSettingsFragment : DSLSettingsFragment(R.string.preferences__
 
   private lateinit var viewModel: NotificationsSettingsViewModel
 
-  private val linkUnifiedPushDistributorLauncher: ActivityResultLauncher<Unit> =
-    registerForActivityResult(UnifiedPushLinkActivity.Contract()) { success ->
+  private val linkUnifiedPushDefaultDistributorLauncher: ActivityResultLauncher<Unit> =
+    registerForActivityResult(UnifiedPushLinkActivity.Contract(default = true)) { success ->
       if (success == true) {
         UnifiedPushDistributor.register()
+        viewModel.setUnifiedPushDistributor(UnifiedPushDistributor.distributorName())
+        viewModel.setUnifiedPush(true)
+      }
+    }
+
+  private val linkUnifiedPushDistributorLauncher: ActivityResultLauncher<Unit> =
+    registerForActivityResult(UnifiedPushLinkActivity.Contract(default = false)) { success ->
+      if (success == true) {
+        UnifiedPushDistributor.register()
+        viewModel.setUnifiedPushDistributor(UnifiedPushDistributor.distributorName())
         viewModel.setUnifiedPush(true)
       }
     }
@@ -85,6 +96,7 @@ class NotificationsSettingsFragment : DSLSettingsFragment(R.string.preferences__
   override fun onResume() {
     super.onResume()
     // It calls viewModel.refresh()
+    viewModel.setUnifiedPushDistributor(UnifiedPushDistributor.distributorName())
     viewModel.setUnifiedPushAvailable(UnifiedPushDistributor.isAvailable())
   }
 
@@ -328,13 +340,29 @@ class NotificationsSettingsFragment : DSLSettingsFragment(R.string.preferences__
 
         switchPref(
           title = DSLSettingsText.from(R.string.NotificationsSettingsFragment__use_unifiedpush),
-          isChecked = state.unifiedPushState.registered,
+          isChecked = state.unifiedPushState.registrationStatus.requested,
           onClick = {
-            if (state.unifiedPushState.registered) {
+            if (state.unifiedPushState.registrationStatus.requested) {
               viewModel.setUnifiedPush(false)
             } else {
-              linkUnifiedPushDistributorLauncher.launch()
+              linkUnifiedPushDefaultDistributorLauncher.launch()
             }
+          }
+        )
+
+        clickPref(
+          title = DSLSettingsText.from(R.string.NotificationsSettingsFragment__unifiedpush_service),
+          summary = when (state.unifiedPushState.registrationStatus) {
+            RegistrationStatus.UNKNOWN,
+            RegistrationStatus.NOT_REGISTERED -> DSLSettingsText.from("")
+            RegistrationStatus.PENDING ->
+              DSLSettingsText.from(R.string.NotificationsSettingsFragment__unifiedpush_pending)
+            RegistrationStatus.REGISTERED ->
+              DSLSettingsText.from(state.unifiedPushState.distributor ?: "")
+          },
+          isEnabled = state.unifiedPushState.registrationStatus.requested,
+          onClick = {
+            linkUnifiedPushDistributorLauncher.launch()
           }
         )
       }
